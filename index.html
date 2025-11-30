@@ -29,7 +29,7 @@
 
         .key-box {
             background: rgba(0,0,0,0.4);
-            padding: 14px;
+            padding: 16px;
             border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.2);
             font-size: 22px;
@@ -54,23 +54,24 @@
         }
     </style>
 
-    <!-- Firebase Lib -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 
 <body>
 <div class="glass-box">
-    <h2>🎉 您的 Feairl 專屬金鑰已生成</h2>
-    <p>感謝完成 Work.ink！以下是您的唯一金鑰：</p>
+    <h2>🎉 Feairl 專屬每日 Key</h2>
+    <p>感謝完成 Work.ink！以下是您今日的金鑰：</p>
 
-    <div id="keyBox" class="key-box">產生中...</div>
-
+    <div id="keyBox" class="key-box">載入中...</div>
     <button onclick="copyKey()">複製金鑰</button>
 </div>
 
 <script>
-    // ===== FirebaseConfig =====
+    // -------------------------------------
+    // Firebase 設定
+    // -------------------------------------
     const firebaseConfig = {
         apiKey: "AIZaSyCRdYTxHGHdQvQgnzwIWutPhXLfFm4485X0",
         authDomain: "keysystem-2f263.firebaseapp.com",
@@ -85,28 +86,79 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 生成 Key（Feairl 開頭）
-    function randomBlock() {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let str = "";
-        for (let i = 0; i < 4; i++) str += chars[Math.floor(Math.random() * chars.length)];
-        return str;
+    // -------------------------------------
+    // 建立或取得使用者唯一 UUID
+    // -------------------------------------
+    function getUUID() {
+        let id = localStorage.getItem("feairl_uuid");
+        if (!id) {
+            id = "UUID-" + crypto.randomUUID();
+            localStorage.setItem("feairl_uuid", id);
+        }
+        return id;
     }
 
-    const finalKey = `Feairl-${randomBlock()}-${randomBlock()}-${randomBlock()}`;
+    const userID = getUUID();
 
-    // 上傳到 Firebase
-    db.ref("keys/" + finalKey).set({
-        created: Date.now(),
-        used: false
-    });
+    // -------------------------------------
+    // 產生 Key
+    // -------------------------------------
+    function randomBlock() {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let s = "";
+        for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+        return s;
+    }
 
-    document.getElementById("keyBox").innerText = finalKey;
+    function makeKey() {
+        return `Feairl-${randomBlock()}-${randomBlock()}-${randomBlock()}`;
+    }
 
-    // 複製
+    // -------------------------------------
+    // 主流程：每天限領一次 + 24hr 過期
+    // -------------------------------------
+    async function loadKey() {
+        const snapshot = await db.ref("userKeys/" + userID).get();
+
+        const now = Date.now();
+
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+
+            // 如果尚未過期 → 顯示今天的 key
+            if (data.expiresAt > now) {
+                document.getElementById("keyBox").innerText = data.key;
+                return;
+            }
+        }
+
+        // 沒有 key 或已過期 → 產生新 key
+        const newKey = makeKey();
+        const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 小時後
+
+        // 寫入 user 專屬 key
+        db.ref("userKeys/" + userID).set({
+            key: newKey,
+            createdAt: Date.now(),
+            expiresAt: expiresAt
+        });
+
+        // Firebase 另存一份 key 供 C# 驗證
+        db.ref("keys/" + newKey).set({
+            user: userID,
+            createdAt: Date.now(),
+            expiresAt: expiresAt,
+            used: false
+        });
+
+        document.getElementById("keyBox").innerText = newKey;
+    }
+
+    loadKey();
+
     function copyKey() {
-        navigator.clipboard.writeText(finalKey);
-        alert("已複製金鑰！");
+        navigator.clipboard.writeText(document.getElementById("keyBox").innerText);
+        alert("已複製！");
     }
 </script>
 </body>
