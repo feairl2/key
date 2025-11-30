@@ -20,76 +20,92 @@
 
         body {
             height: 100vh;
-            background: linear-gradient(135deg, #e9eef5, #d4dcec);
+            background: radial-gradient(circle at center top, #202020, #0a0a0a 80%);
             font-family: "Poppins", sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            color: white;
+            overflow: hidden;
         }
 
+        /* 顆粒背景模糊 */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: url('https://i.imgur.com/zY7RZ1L.png');
+            opacity: 0.18;
+            transform: rotate(12deg);
+        }
+
+        /* ⭐ 超大玻璃面板 */
         .glass-box {
-            width: 420px;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.45);
-            border-radius: 20px;
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            position: relative;
+            width: 600px;
+            padding: 50px 60px;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
             text-align: center;
             animation: fadeIn 0.7s ease;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         h1 {
-            font-size: 28px;
+            font-size: 36px;
             font-weight: 700;
-            color: #333;
-            margin-bottom: 14px;
+            margin-bottom: 22px;
+            letter-spacing: 1px;
         }
 
         p {
-            font-size: 16px;
-            color: #555;
+            font-size: 20px;
+            color: #cccccc;
+            margin-bottom: 25px;
         }
 
         #key-field {
-            margin-top: 20px;
-            padding: 14px;
-            font-size: 22px;
+            margin-top: 25px;
+            padding: 18px;
+            font-size: 28px;
             font-weight: 600;
-            background: rgba(255,255,255,0.6);
-            border: 2px solid rgba(255,255,255,0.9);
-            border-radius: 12px;
+            background: rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.28);
+            border-radius: 14px;
             letter-spacing: 1px;
-            min-height: 38px;
-            color: #333;
+            min-height: 48px;
             word-break: break-all;
         }
 
         button {
-            margin-top: 22px;
+            margin-top: 30px;
             width: 100%;
-            padding: 12px;
-            font-size: 18px;
+            padding: 16px;
+            font-size: 22px;
             font-weight: 600;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             cursor: pointer;
-            background: #ffffffaa;
-            backdrop-filter: blur(6px);
-            border: 1px solid #ffffffdd;
+            background: rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.35);
             transition: 0.2s;
+            color: white;
         }
 
         button:hover {
-            background: #ffffffee;
-            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.28);
+            transform: scale(1.03);
         }
     </style>
 </head>
@@ -98,7 +114,7 @@
 
 <div class="glass-box">
     <h1>🔑 今日專屬金鑰</h1>
-    <p>你已成功完成 Work.ink 流程，以下是今天的金鑰：</p>
+    <p>以下是你完成 Work.ink 後取得的 Key：</p>
 
     <div id="key-field">讀取中...</div>
 
@@ -116,7 +132,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-
     // ========= 從 Firestore 讀取金鑰 =========
     async function loadFirebaseKey() {
         try {
@@ -129,13 +144,12 @@
                 document.getElementById("key-field").innerText = "（今日尚未產生金鑰）";
             }
         } catch (err) {
-            document.getElementById("key-field").innerText = "無法讀取金鑰";
+            document.getElementById("key-field").innerText = "讀取金鑰錯誤";
             console.error(err);
         }
     }
 
     loadFirebaseKey();
-
 
     // ========= 複製金鑰 =========
     function copyKey() {
