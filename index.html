@@ -1,144 +1,127 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<title>今日專屬金鑰</title>
+    <meta charset="UTF-8">
+    <title>今日專屬金鑰</title>
 
-<!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-body {
-    height: 100vh;
-    background: radial-gradient(circle at top left, #3d2aff, #000000 60%);
-    font-family: 'Poppins', sans-serif;
-    overflow: hidden;
-}
-
-/* 全畫面粒子背景 */
-#particles-js {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-}
-
-/* 中央玻璃卡片 */
-.card {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 420px;
-    padding: 40px;
-    border-radius: 20px;
-
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-
-    text-align: center;
-    z-index: 2;
-    box-shadow: 0 0 30px rgba(150, 100, 255, 0.4);
-}
-
-.card h1 {
-    font-size: 28px;
-    color: #fff;
-    margin-bottom: 20px;
-    font-weight: 600;
-}
-
-.key-box {
-    margin-top: 20px;
-    font-size: 26px;
-    padding: 15px 25px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 12px;
-    color: #a4c8ff;
-    font-weight: 600;
-    letter-spacing: 2px;
-    border: 2px solid rgba(255,255,255,0.3);
-    box-shadow: 0 0 20px rgba(100,150,255,0.6);
-}
-
-.copy-btn {
-    margin-top: 25px;
-    padding: 12px 25px;
-    background: linear-gradient(90deg, #5f3bff, #8f57ff);
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 18px;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(120,80,255,0.6);
-    transition: 0.2s;
-}
-
-.copy-btn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 0 25px rgba(160,120,255,0.9);
-}
-
-.footer {
-    position: absolute;
-    bottom: 15px;
-    width: 100%;
-    text-align:center;
-    color: rgba(255,255,255,0.6);
-    font-size: 14px;
-    z-index: 2;
-}
-</style>
-
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Poppins", sans-serif;
+            background: #0f0f0f;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 480px;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 18px;
+            text-align: center;
+            box-shadow: 0 0 18px rgba(0, 0, 0, 0.55);
+            animation: fadeIn 0.6s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        #key-field {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 18px;
+            padding: 12px;
+            border: 2px dashed #7f5fff;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            display: inline-block;
+            min-height: 40px;
+            word-break: break-all;
+        }
+        button {
+            margin-top: 25px;
+            padding: 12px 25px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #7c4dff;
+            color: white;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #9b6bff;
+            transform: scale(1.03);
+        }
+    </style>
 </head>
 <body>
 
-<!-- 粒子背景 -->
-<div id="particles-js"></div>
+<div class="container">
+    <h1>🔑 今日專屬金鑰</h1>
+    <p>以下為你 Work.ink 完成後取得的金鑰：</p>
 
-<!-- 中央卡片 -->
-<div class="card">
-    <h1>你的今日專屬金鑰</h1>
-    <div class="key-box" id="key">載入中...</div>
-    <button class="copy-btn" onclick="copyKey()">複製金鑰</button>
+    <div id="key-field">讀取中...</div>
+
+    <br>
+    <button onclick="copyKey()">📋 複製金鑰</button>
 </div>
 
-<div class="footer">© 2025 老倍遊戲 Key System</div>
-
-<!-- 粒子特效 -->
-<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
-
 <script>
-// 粒子配置
-particlesJS("particles-js", {
-  "particles": {
-    "number": { "value": 90 },
-    "size": { "value": 3 },
-    "color": { "value": "#8f6bff" },
-    "line_linked": { "enable": true, "color": "#a88bff" },
-    "move": { "speed": 2 }
-  }
-});
+    // ========= Firebase 設定 =========
+    const firebaseConfig = {
+        apiKey: "AIzaSyCRdYTxHGhDQvQgnzwIwtpHkLFm4485X0",
+        authDomain: "keysystem-2f263.firebaseapp.com",
+        projectId: "keysystem-2f263",
+    };
 
-// 生成每日專屬金鑰
-function generateKey() {
-    let date = new Date().toDateString();
-    let seed = date + navigator.userAgent + Math.random();
-    let hash = Array.from(seed).reduce((a,c)=>((a<<5)-a+c.charCodeAt(0)) | 0, 0);
-    return "KEY-" + Math.abs(hash).toString(36).toUpperCase().substring(0,12);
-}
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-// 顯示金鑰
-document.getElementById("key").innerText = generateKey();
+    // ========= 從 Firestore 讀取金鑰 =========
+    async function loadFirebaseKey() {
+        try {
+            const doc = await db.collection("keys").doc("today").get();
 
-// 複製功能
-function copyKey() {
-    navigator.clipboard.writeText(document.getElementById("key").innerText);
-    alert("已複製金鑰！");
-}
+            if (doc.exists) {
+                let key = doc.data().key;
+                document.getElementById("key-field").innerText = key;
+            } else {
+                document.getElementById("key-field").innerText = "（今日尚未產生金鑰）";
+            }
+        } catch (err) {
+            document.getElementById("key-field").innerText = "讀取錯誤";
+            console.error(err);
+        }
+    }
+
+    loadFirebaseKey();
+
+    // ========= 複製金鑰 =========
+    function copyKey() {
+        const key = document.getElementById("key-field").innerText;
+        navigator.clipboard.writeText(key);
+        alert("已複製金鑰！");
+    }
 </script>
 
 </body>
