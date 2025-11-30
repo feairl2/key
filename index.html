@@ -5,7 +5,7 @@
     <title>今日專屬金鑰</title>
 
     <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -17,72 +17,91 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
+            height: 100vh;
+            background: linear-gradient(135deg, #e9eef5, #d4dcec);
             font-family: "Poppins", sans-serif;
-            background: #0f0f0f;
-            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
             padding: 20px;
         }
-        .container {
-            width: 480px;
-            background: #1a1a1a;
+
+        .glass-box {
+            width: 420px;
             padding: 30px;
-            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.45);
+            border-radius: 20px;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
             text-align: center;
-            box-shadow: 0 0 18px rgba(0, 0, 0, 0.55);
-            animation: fadeIn 0.6s ease;
+            animation: fadeIn 0.7s ease;
         }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
         h1 {
             font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 14px;
         }
+
+        p {
+            font-size: 16px;
+            color: #555;
+        }
+
         #key-field {
+            margin-top: 20px;
+            padding: 14px;
             font-size: 22px;
             font-weight: 600;
-            margin-top: 18px;
-            padding: 12px;
-            border: 2px dashed #7f5fff;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.08);
-            display: inline-block;
-            min-height: 40px;
+            background: rgba(255,255,255,0.6);
+            border: 2px solid rgba(255,255,255,0.9);
+            border-radius: 12px;
+            letter-spacing: 1px;
+            min-height: 38px;
+            color: #333;
             word-break: break-all;
         }
+
         button {
-            margin-top: 25px;
-            padding: 12px 25px;
+            margin-top: 22px;
+            width: 100%;
+            padding: 12px;
             font-size: 18px;
+            font-weight: 600;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
-            background: #7c4dff;
-            color: white;
+            background: #ffffffaa;
+            backdrop-filter: blur(6px);
+            border: 1px solid #ffffffdd;
             transition: 0.2s;
         }
+
         button:hover {
-            background: #9b6bff;
-            transform: scale(1.03);
+            background: #ffffffee;
+            transform: scale(1.02);
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
+<div class="glass-box">
     <h1>🔑 今日專屬金鑰</h1>
-    <p>以下為你 Work.ink 完成後取得的金鑰：</p>
+    <p>你已成功完成 Work.ink 流程，以下是今天的金鑰：</p>
 
     <div id="key-field">讀取中...</div>
 
-    <br>
     <button onclick="copyKey()">📋 複製金鑰</button>
 </div>
 
@@ -97,6 +116,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+
     // ========= 從 Firestore 讀取金鑰 =========
     async function loadFirebaseKey() {
         try {
@@ -109,12 +129,13 @@
                 document.getElementById("key-field").innerText = "（今日尚未產生金鑰）";
             }
         } catch (err) {
-            document.getElementById("key-field").innerText = "讀取錯誤";
+            document.getElementById("key-field").innerText = "無法讀取金鑰";
             console.error(err);
         }
     }
 
     loadFirebaseKey();
+
 
     // ========= 複製金鑰 =========
     function copyKey() {
