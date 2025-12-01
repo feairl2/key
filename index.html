@@ -69,9 +69,18 @@
 </div>
 
 <script>
-    // -------------------------------------
-    // Firebase 設定
-    // -------------------------------------
+const urlParams = new URLSearchParams(window.location.search);
+const from = urlParams.get("from");
+
+if (!from) {
+    // 沒有參數 = 非合法來源
+    document.body.innerHTML = `
+        <div style="color:white; text-align:center; margin-top:100px; font-size:24px;">
+            請先完成 Work.ink 驗證再進入本頁面
+        </div>
+    `;
+    throw new Error("非法存取：未從 Work.ink 跳轉");
+}
     const firebaseConfig = {
         apiKey: "AIZaSyCRdYTxHGHdQvQgnzwIWutPhXLfFm4485X0",
         authDomain: "keysystem-2f263.firebaseapp.com",
@@ -163,3 +172,4 @@
 </script>
 </body>
 </html>
+
