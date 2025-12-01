@@ -1,91 +1,76 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8" />
-<title>產生你的每日鑰匙</title>
+<meta charset="UTF-8"/>
+<title>鑰匙生成中…</title>
 <style>
-    body {
-        background: #0d0d0d;
-        color: #fff;
-        font-family: "Poppins", sans-serif;
-        text-align: center;
-        padding-top: 100px;
-    }
-    #box {
-        background: rgba(255,255,255,0.05);
-        padding: 30px;
-        width: 420px;
-        margin: auto;
-        border-radius: 20px;
-        backdrop-filter: blur(12px);
-    }
-    button {
-        background:#00ff99;
-        border:none;
-        padding:15px 25px;
-        border-radius:12px;
-        font-size:18px;
-        cursor:pointer;
-        margin-top:20px;
-    }
+body{
+    background:#0d0d0d; color:white;
+    font-family:"Poppins",sans-serif;
+    text-align:center;
+    padding-top:120px;
+}
+.box{
+    width:420px;
+    margin:auto;
+    background:rgba(255,255,255,0.05);
+    padding:30px;
+    border-radius:18px;
+    backdrop-filter:blur(10px);
+}
+.key{
+    font-size:26px;
+    color:#00ff99;
+    margin-top:20px;
+}
 </style>
 </head>
 
 <body>
-<div id="box">
-    <h2>每日免費鑰匙</h2>
-    <p id="msg">按下按鈕產生今日鑰匙</p>
-    <button onclick="generateKey()">產生鑰匙</button>
-    <p id="key" style="margin-top:20px;font-size:22px;color:#00ff99"></p>
+<div class="box">
+    <h2>🔐 正在完成授權…</h2>
+    <p id="msg">請稍候</p>
+    <div id="key" class="key"></div>
 </div>
 
 <script>
-// =============== 設定（換成你的 Firebase DB） ==================
-const FIREBASEURL = "https://feairl-a7e28-default-rtdb.firebaseio.com";
+const DB_URL = "https://feairl-a7e28-default-rtdb.firebaseio.com";
 
-// 取得訪客 IP
-async function getIP() {
+// 取得使用者 IP
+async function getIP(){
     let res = await fetch("https://api.ipify.org?format=json");
     let data = await res.json();
     return data.ip;
 }
 
-// 產生隨機 KEY
-function randomKey() {
+// 產生隨機 KEY（顯示用）
+function randomKey(){
     return "KEY-" + Math.random().toString(36).substring(2,10).toUpperCase();
 }
 
-// ================================================================
+async function main(){
+    try{
+        let ip = await getIP();
+        let key = randomKey();
 
-async function generateKey() {
+        // 在 Firebase 寫入此 IP 已完成任務
+        await fetch(`${DB_URL}/worklog/${ip}.json`, {
+            method:"PUT",
+            body: JSON.stringify({
+                completed: true,
+                time: Date.now()
+            })
+        });
 
-    document.getElementById("msg").innerText = "正在檢查…";
+        document.getElementById("msg").innerText = "已完成驗證！你的 KEY：";
+        document.getElementById("key").innerText = key;
 
-    let ip = await getIP();
-    let today = new Date().toISOString().slice(0,10);
-
-    // 檢查此 IP 今天是否已領過
-    let check = await fetch(`${FIREBASE_URL}/keys/${ip}.json`);
-    let used = await check.json();
-
-    if (used === today) {
-        document.getElementById("msg").innerText = "你今天已經領取過鑰匙！";
-        document.getElementById("key").innerText = "";
-        return;
+    } catch(e){
+        document.getElementById("msg").innerText = "❌ 發生錯誤：" + e;
     }
-
-    // 產生新的 KEY
-    let newKey = randomKey();
-
-    // 存到 Firebase（記錄今天已領取）
-    await fetch(`${FIREBASE_URL}/keys/${ip}.json`, {
-        method: "PUT",
-        body: JSON.stringify(today)
-    });
-
-    document.getElementById("msg").innerText = "你的今日鑰匙如下：";
-    document.getElementById("key").innerText = newKey;
 }
+
+main();
 </script>
 
 </body>
