@@ -57,31 +57,14 @@
 
     <input id="keyInput" placeholder="輸入你的 KEY">
 
-    <button onclick="verify()">登入</button>
+    <button onclick="alert('這裡不用驗證，真正驗證在你的程式端')">
+        登入
+    </button>
 
     <button onclick="location.href='https://work.ink/26Yy/feairl-key-system'">
         ➤ 取得 KEY（Work.ink）
     </button>
 </div>
 
-<script>
-async function verify() {
-    let input = document.getElementById("keyInput").value.trim();
-    if (!input) return alert("請輸入 KEY!");
-
-    let url = `https://feairl-a7e28-default-rtdb.firebaseio.com/keys/${input}.json`;
-
-    let res = await fetch(url);
-    let data = await res.json();
-
-    if (data && data.valid === true) {
-        alert("驗證成功!");
-    } else {
-        alert("KEY 錯誤或已過期!");
-    }
-}
-</script>
-
 </body>
 </html>
-
