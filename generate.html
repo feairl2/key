@@ -1,1 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>生成金鑰中…</title>
+<style>
+body {
+    background:#0a0a0a; color:white;
+    font-family:Arial; text-align:center; padding-top:150px;
+}
+.box { background:#111; padding:40px; width:420px; margin:auto;
+      border-radius:20px; border:1px solid #222; }
+.key { font-size:26px; margin-top:20px; color:#00ff88; }
+</style>
+</head>
+<body>
 
+<div class="box">
+    <h2>🔐 正在產生您的專屬鑰匙…</h2>
+    <p id="msg">請稍候</p>
+    <div id="keyBox" class="key"></div>
+</div>
+
+<script>
+function newToken() {
+    return "TK_" + Math.random().toString(36).substring(2,10) + Date.now();
+}
+
+async function saveToken(token) {
+    let expire = Date.now() + 86400000; // 24小時
+
+    let url = `https://YOUR_DB_ID-default-rtdb.firebaseio.com/tokens/${token}.json`;
+
+    await fetch(url, {
+        method:"PUT",
+        body:JSON.stringify({ valid:true, expire:expire })
+    });
+}
+
+async function main() {
+    let token = newToken();
+    await saveToken(token);
+
+    document.getElementById("keyBox").innerText = token;
+    document.getElementById("msg").innerText = "✔ 已成功產生鑰匙";
+
+    setTimeout(() => {
+        window.location.href = "index.html?token=" + token;
+    }, 2000);
+}
+
+main();
+</script>
+</body>
+</html>
