@@ -1,84 +1,91 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<title>生成 KEY 中…</title>
+<meta charset="UTF-8" />
+<title>產生你的每日鑰匙</title>
 <style>
     body {
         background: #0d0d0d;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        color: white;
+        color: #fff;
         font-family: "Poppins", sans-serif;
-    }
-    .box {
-        background: rgba(20,20,20,0.8);
-        padding: 35px;
-        border-radius: 15px;
-        border: 1px solid #333;
-        width: 420px;
         text-align: center;
-        backdrop-filter: blur(10px);
+        padding-top: 100px;
     }
-    .key {
-        margin-top: 20px;
-        padding: 12px;
-        background: #1e1e1e;
-        border-radius: 10px;
-        word-break: break-all;
-        font-size: 18px;
+    #box {
+        background: rgba(255,255,255,0.05);
+        padding: 30px;
+        width: 420px;
+        margin: auto;
+        border-radius: 20px;
+        backdrop-filter: blur(12px);
+    }
+    button {
+        background:#00ff99;
+        border:none;
+        padding:15px 25px;
+        border-radius:12px;
+        font-size:18px;
+        cursor:pointer;
+        margin-top:20px;
     }
 </style>
 </head>
 
 <body>
-
-<div class="box">
-    <h2>🔐 正在產生您的專屬 KEY…</h2>
-    <div id="status">請稍候…</div>
-    <div id="keyBox" class="key" style="display:none;"></div>
+<div id="box">
+    <h2>每日免費鑰匙</h2>
+    <p id="msg">按下按鈕產生今日鑰匙</p>
+    <button onclick="generateKey()">產生鑰匙</button>
+    <p id="key" style="margin-top:20px;font-size:22px;color:#00ff99"></p>
 </div>
 
 <script>
-/* -------------- 檢查 Work.ink 是否傳來 from=workink -------------- */
-const url = new URLSearchParams(window.location.search);
-if (!url.get("from")) {
-    document.getElementById("status").innerHTML = "❌ 未從 Work.ink 驗證，禁止訪問!";
-    throw new Error("Invalid source");
+// =============== 設定（換成你的 Firebase DB） ==================
+const FIREBASE_URL = "https://feairl-a7e28-default-rtdb.firebaseio.com";
+
+// 取得訪客 IP
+async function getIP() {
+    let res = await fetch("https://api.ipify.org?format=json");
+    let data = await res.json();
+    return data.ip;
 }
 
-/* -------------- Firebase 設定（你必須改成自己的） -------------- */
-const firebaseURL = "https://keystem-2f263-default-rtdb.firebaseio.com";
-
-/* -------------- 產生唯一 KEY -------------- */
-function genKey() {
-    return "Feairl-" + Math.random().toString(36).substring(2,12);
+// 產生隨機 KEY
+function randomKey() {
+    return "KEY-" + Math.random().toString(36).substring(2,10).toUpperCase();
 }
 
-/* -------------- 主流程 -------------- */
-async function createKey() {
-    let key = genKey();
-    let now = Date.now();
+// ================================================================
 
-    let data = {
-        valid: true,
-        created: now,
-        expire: now + 86400000  // 24 小時
-    };
+async function generateKey() {
 
-    let res = await fetch(`${firebaseURL}/keys/${key}.json`, {
+    document.getElementById("msg").innerText = "正在檢查…";
+
+    let ip = await getIP();
+    let today = new Date().toISOString().slice(0,10);
+
+    // 檢查此 IP 今天是否已領過
+    let check = await fetch(`${FIREBASE_URL}/keys/${ip}.json`);
+    let used = await check.json();
+
+    if (used === today) {
+        document.getElementById("msg").innerText = "你今天已經領取過鑰匙！";
+        document.getElementById("key").innerText = "";
+        return;
+    }
+
+    // 產生新的 KEY
+    let newKey = randomKey();
+
+    // 存到 Firebase（記錄今天已領取）
+    await fetch(`${FIREBASE_URL}/keys/${ip}.json`, {
         method: "PUT",
-        body: JSON.stringify(data)
+        body: JSON.stringify(today)
     });
 
-    document.getElementById("status").innerHTML = "你的 KEY 已生成：";
-    document.getElementById("keyBox").style.display = "block";
-    document.getElementById("keyBox").innerHTML = key;
+    document.getElementById("msg").innerText = "你的今日鑰匙如下：";
+    document.getElementById("key").innerText = newKey;
 }
-
-createKey();
 </script>
 
 </body>
