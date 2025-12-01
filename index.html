@@ -2,7 +2,8 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>今日專屬鑰匙</title>
+<title>Feairl 今日專屬鑰匙</title>
+
 <style>
     body {
         background: #0b0b0b;
@@ -26,44 +27,65 @@
     }
 
     .key-box {
-        font-size: 28px;
+        font-size: 24px;
         margin-top: 20px;
         padding: 15px;
         background: rgba(255,255,255,0.05);
         border-radius: 12px;
+        word-wrap: break-word;
     }
 </style>
+
 </head>
 <body>
 
 <div class="box" id="content">
-    <h2>🔍 檢查 Work.ink 驗證中…</h2>
+    <h2>正在驗證 Work.ink…</h2>
 </div>
 
 <script>
-// 取得網址參數
+// 取得網址參數 ?w=1
 const params = new URLSearchParams(window.location.search);
 const w = params.get("w");
 
-// 如果網址沒有 w → 代表沒完成 Work.ink
+// 若沒有 w → 代表沒有從 Work.ink 回來
 if (!w) {
     document.getElementById("content").innerHTML = `
-        <h2>❌ 未完成 Work.ink 驗證</h2>
-        <p>請先從 Work.ink 進入才能取得今日鑰匙。</p>
+        <h2>未完成 Work.ink 驗證</h2>
+        <p>請從 Work.ink 進入本頁面。</p>
     `;
-} else {
+} 
+else 
+{
+    // ✔ 已完成 Work.ink → 取得使用者 IP
+    fetch("https://api.ipify.org?format=json")
+        .then(res => res.json())
+        .then(data => {
+            const ip = data.ip; // 使用者 IP
+            const today = new Date().toISOString().split("T")[0];
+            const raw = today + "-" + ip;
 
-    // ✔ Work.ink 驗證通過
-    const today = new Date().toISOString().split("T")[0];
-    const todayKey = "Feairl-" + btoa(today).replace(/=/g,"");
+            // 產生專屬金鑰（Base64）
+            const key = "Feairl-" + btoa(raw).replace(/=/g,"");
 
-    document.getElementById("content").innerHTML = `
-        <h2>🎉 驗證成功！</h2>
-        <p>以下為您今日的專屬鑰匙：</p>
+            document.getElementById("content").innerHTML = `
+                <h2>驗證成功！</h2>
+                <p>以下為您今日的專屬鑰匙：</p>
 
-        <div class="key-box">${todayKey}</div>
-        <p style="opacity:0.6; margin-top:10px;">鑰匙會於 24 小時後更新</p>
-    `;
+                <div class="key-box">${key}</div>
+
+                <p style="opacity:0.6; margin-top:10px;">
+                    該鑰匙將於 24 小時後自動更新
+                </p>
+                <p style="opacity:0.4;">IP：${ip}</p>
+            `;
+        })
+        .catch(() => {
+            document.getElementById("content").innerHTML = `
+                <h2>無法取得 IP</h2>
+                <p>請檢查您的網路或關閉阻擋工具再試一次。</p>
+            `;
+        });
 }
 </script>
 
