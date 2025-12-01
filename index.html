@@ -25,7 +25,7 @@ body {
 
 <script>
 async function check(token) {
-    let url = `https://YOUR_DB_ID-default-rtdb.firebaseio.com/tokens/${token}.json`;
+    let url = `https://feairl-a7e28-default-rtdb.firebaseio.com/tokens/${token}.json`;
     let res = await fetch(url);
     let data = await res.json();
     if (!data) return false;
@@ -66,3 +66,4 @@ main();
 </script>
 </body>
 </html>
+
