@@ -2,159 +2,73 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>Feairl Key System</title>
-
-<!-- 字體 -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
+<title>今日專屬鑰匙</title>
 <style>
     body {
+        background: #0d0d0d;
         margin: 0;
-        background: #0b0b0d; /* 超深色 */
-        font-family: 'Inter', sans-serif;
+        font-family: "Poppins", sans-serif;
         color: white;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        overflow: hidden;
     }
 
-    .container {
-        width: 550px;   /* 面板放大 */
+    .box {
+        width: 480px;
+        background: rgba(20, 20, 20, 0.75);
         padding: 40px;
-        background: rgba(20, 20, 25, 0.9); /* 深色 + 微透明 */
-        border-radius: 18px;
-        box-shadow: 0 0 40px rgba(0,0,0,0.45);
+        border-radius: 20px;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
         text-align: center;
     }
 
-    h1 {
-        margin-bottom: 18px;
-        font-size: 30px;
-        font-weight: 700;
-    }
-
-    #keyBox {
-        margin-top: 25px;
-        font-size: 22px;
-        font-weight: 600;
+    .key-box {
+        font-size: 26px;
+        margin-top: 20px;
         padding: 15px;
-        background: #16161a;
-        border-radius: 10px;
-        word-break: break-all;
-        border: 1px solid #2a2a33;
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
     }
 
-    .loading {
-        margin-top: 30px;
-        font-size: 18px;
-        opacity: 0.7;
-    }
 </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🔑 Feairl Key System</h1>
-    <div id="keyBox">正在驗證中...</div>
-    <div class="loading">請稍候...</div>
+<div class="box" id="content">
+    <h2>🔑 取得今日專屬鑰匙</h2>
+    <p>請稍候，正在驗證 Work.ink 來源…</p>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
 <script>
-// =====================================================
-// Step 1：讀取 Token（不能缺）
-// =====================================================
-const urlParams2 = new URLSearchParams(window.location.search);
-const token = urlParams2.get("token");
+// ⛔ 如果使用者直接開網址，不從 Work.ink 來 → 必須阻擋
+const ref = document.referrer;
 
-if (!token) {
-    document.body.innerHTML = `
-        <div style="color:white; text-align:center; margin-top:150px; font-size:26px;">
-            請先完成 Work.ink 驗證才能領取金鑰
-        </div>
+if (!ref.includes("work.ink")) {
+    document.getElementById("content").innerHTML = `
+        <h2>❌ 尚未完成 Work.ink</h2>
+        <p>請先透過 Work.ink 解鎖此頁面。</p>
+        <p style='opacity:0.5'>若已完成，請重新從 Work.ink 進入。</p>
     `;
-    throw new Error("缺少 Token");
+} else {
+
+    // ✔ Work.ink 來源合法
+    // 產生今日專屬鑰匙（依照今日日期）
+    const today = new Date().toISOString().split("T")[0];
+    
+    // 你可以換成自己的金鑰產生方式
+    const key = "Feairl-" + btoa(today).replace(/=/g,"");
+
+    document.getElementById("content").innerHTML = `
+        <h2>🎉 成功解鎖！</h2>
+        <p>以下為您今日的專屬鑰匙：</p>
+        <div class="key-box">${key}</div>
+        <p style="opacity:0.7; margin-top:10px;">鑰匙 24 小時後會更新</p>
+    `;
 }
-
-// =====================================================
-// Firebase 設定
-// =====================================================
-const firebaseConfig2 = {
-    apiKey: "AIzaSyCRdYTxHGhDQvQgnzwIWutPhXLfFm4485X0",
-    authDomain: "keysystem-2f263.firebaseapp.com",
-    databaseURL: "https://keysystem-2f263-default-rtdb.firebaseio.com",
-    projectId: "keysystem-2f263",
-    storageBucket: "keysystem-2f263.firebasestorage.app",
-    messagingSenderId: "212352827734",
-    appId: "1:212352827734:web:f2b0f401d206ac483796f7",
-    measurementId: "G-83FH95F22W"
-};
-firebase.initializeApp(firebaseConfig2);
-
-const db2 = firebase.database();
-
-// =====================================================
-// Step 2：檢查 Token 是否存在
-// =====================================================
-db2.ref("tokens/" + token).once("value").then(snapshot => {
-
-    if (!snapshot.exists()) {
-
-        document.querySelector("#keyBox").innerHTML = `
-            Token 已失效或不合法<br><br>請重新完成 Work.ink
-        `;
-        document.querySelector(".loading").style.display = "none";
-        throw new Error("Invalid token");
-    }
-
-    // Token 有效 → 刪除它（一次性）
-    db2.ref("tokens/" + token).remove();
-
-    // =====================================================
-    // Step 3：產生金鑰（每人 24 小時一次）
-    // =====================================================
-
-    let savedKey = localStorage.getItem("feairl_key");
-    let expire = localStorage.getItem("feairl_expire");
-    let now = Date.now();
-
-    // 如果有舊金鑰而且還沒過期 → 重用
-    if (savedKey && expire && now < parseInt(expire)) {
-
-        document.querySelector("#keyBox").textContent = savedKey;
-        document.querySelector(".loading").textContent = "今日金鑰已載入 ✔";
-        return;
-    }
-
-    // 否則 → 產生新金鑰
-    function generateNewKey() {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        let key = "";
-        for (let i = 0; i < 30; i++) {
-            key += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return key;
-    }
-
-    let newKey = generateNewKey();
-    let expireTime = now + 24 * 60 * 60 * 1000; // 24 小時後過期
-
-    // 存入 localStorage
-    localStorage.setItem("feairl_key", newKey);
-    localStorage.setItem("feairl_expire", expireTime.toString());
-
-    // 顯示新金鑰
-    document.querySelector("#keyBox").textContent = newKey;
-    document.querySelector(".loading").textContent = "金鑰已產生 ✔";
-
-});
 </script>
 
 </body>
 </html>
-
