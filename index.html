@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>Feairl 今日專屬鑰匙</title>
+<title>今日專屬鑰匙</title>
 
 <style>
     body {
@@ -40,51 +40,54 @@
 <body>
 
 <div class="box" id="content">
-    <h2>正在驗證 Work.ink…</h2>
+    <h2>🔍 正在驗證 Work.ink …</h2>
 </div>
 
 <script>
-// 取得網址參數 ?w=1
 const params = new URLSearchParams(window.location.search);
-const w = params.get("w");
+const ref = params.get("ref");
 
-// 若沒有 w → 代表沒有從 Work.ink 回來
-if (!w) {
+// ✦ 沒有 ref → 直接拒絕
+if (!ref) {
     document.getElementById("content").innerHTML = `
-        <h2>未完成 Work.ink 驗證</h2>
-        <p>請從 Work.ink 進入本頁面。</p>
+        <h2>❌ 尚未完成 Work.ink</h2>
+        <p>請從 Work.ink 完成任務後自動返回本頁。</p>
     `;
-} 
-else 
-{
-    // ✔ 已完成 Work.ink → 取得使用者 IP
-    fetch("https://api.ipify.org?format=json")
+} else {
+
+    // ✦ 呼叫 Work.ink API 驗證 ref 是否真的完成
+    fetch("https://work.ink/api/check?ref=" + ref)
         .then(res => res.json())
         .then(data => {
-            const ip = data.ip; // 使用者 IP
-            const today = new Date().toISOString().split("T")[0];
-            const raw = today + "-" + ip;
 
-            // 產生專屬金鑰（Base64）
-            const key = "Feairl-" + btoa(raw).replace(/=/g,"");
+            if (!data.valid) {
+                // ❌ 沒有通過 Work.ink
+                document.getElementById("content").innerHTML = `
+                    <h2>❌ Work.ink 驗證失敗</h2>
+                    <p>請重新從 Work.ink 完成任務。</p>
+                `;
+                return;
+            }
 
-            document.getElementById("content").innerHTML = `
-                <h2>驗證成功！</h2>
-                <p>以下為您今日的專屬鑰匙：</p>
+            // ✔ 通過 Work.ink → 再取得使用者 IP 生成鑰匙
+            fetch("https://api.ipify.org?format=json")
+                .then(r => r.json())
+                .then(ipData => {
 
-                <div class="key-box">${key}</div>
+                    const today = new Date().toISOString().split("T")[0];
+                    const raw = today + "-" + ipData.ip;
+                    const key = "Feairl-" + btoa(raw).replace(/=/g,"");
 
-                <p style="opacity:0.6; margin-top:10px;">
-                    該鑰匙將於 24 小時後自動更新
-                </p>
-                <p style="opacity:0.4;">IP：${ip}</p>
-            `;
-        })
-        .catch(() => {
-            document.getElementById("content").innerHTML = `
-                <h2>無法取得 IP</h2>
-                <p>請檢查您的網路或關閉阻擋工具再試一次。</p>
-            `;
+                    document.getElementById("content").innerHTML = `
+                        <h2>🎉 驗證成功！</h2>
+                        <p>今日您的專屬鑰匙：</p>
+                        <div class="key-box">${key}</div>
+                        <p style="opacity:0.6;margin-top:10px;">
+                            每個人依 IP 產生，24 小時更新
+                        </p>
+                    `;
+                });
+
         });
 }
 </script>
