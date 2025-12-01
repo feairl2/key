@@ -2,54 +2,84 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>生成金鑰中…</title>
+<title>生成 KEY 中…</title>
 <style>
-body {
-    background:#0a0a0a; color:white;
-    font-family:Arial; text-align:center; padding-top:150px;
-}
-.box { background:#111; padding:40px; width:420px; margin:auto;
-      border-radius:20px; border:1px solid #222; }
-.key { font-size:26px; margin-top:20px; color:#00ff88; }
+    body {
+        background: #0d0d0d;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: white;
+        font-family: "Poppins", sans-serif;
+    }
+    .box {
+        background: rgba(20,20,20,0.8);
+        padding: 35px;
+        border-radius: 15px;
+        border: 1px solid #333;
+        width: 420px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+    }
+    .key {
+        margin-top: 20px;
+        padding: 12px;
+        background: #1e1e1e;
+        border-radius: 10px;
+        word-break: break-all;
+        font-size: 18px;
+    }
 </style>
 </head>
+
 <body>
 
 <div class="box">
-    <h2>🔐 正在產生您的專屬鑰匙…</h2>
-    <p id="msg">請稍候</p>
-    <div id="keyBox" class="key"></div>
+    <h2>🔐 正在產生您的專屬 KEY…</h2>
+    <div id="status">請稍候…</div>
+    <div id="keyBox" class="key" style="display:none;"></div>
 </div>
 
 <script>
-function newToken() {
-    return "TK_" + Math.random().toString(36).substring(2,10) + Date.now();
+/* -------------- 檢查 Work.ink 是否傳來 from=workink -------------- */
+const url = new URLSearchParams(window.location.search);
+if (!url.get("from")) {
+    document.getElementById("status").innerHTML = "❌ 未從 Work.ink 驗證，禁止訪問!";
+    throw new Error("Invalid source");
 }
 
-async function saveToken(token) {
-    let expire = Date.now() + 86400000; // 24小時
+/* -------------- Firebase 設定（你必須改成自己的） -------------- */
+const firebaseURL = "https://keystem-2f263-default-rtdb.firebaseio.com";
 
-    let url = `https://YOUR_DB_ID-default-rtdb.firebaseio.com/tokens/${token}.json`;
+/* -------------- 產生唯一 KEY -------------- */
+function genKey() {
+    return "Feairl-" + Math.random().toString(36).substring(2,12);
+}
 
-    await fetch(url, {
-        method:"PUT",
-        body:JSON.stringify({ valid:true, expire:expire })
+/* -------------- 主流程 -------------- */
+async function createKey() {
+    let key = genKey();
+    let now = Date.now();
+
+    let data = {
+        valid: true,
+        created: now,
+        expire: now + 86400000  // 24 小時
+    };
+
+    let res = await fetch(`${firebaseURL}/keys/${key}.json`, {
+        method: "PUT",
+        body: JSON.stringify(data)
     });
+
+    document.getElementById("status").innerHTML = "你的 KEY 已生成：";
+    document.getElementById("keyBox").style.display = "block";
+    document.getElementById("keyBox").innerHTML = key;
 }
 
-async function main() {
-    let token = newToken();
-    await saveToken(token);
-
-    document.getElementById("keyBox").innerText = token;
-    document.getElementById("msg").innerText = "✔ 已成功產生鑰匙";
-
-    setTimeout(() => {
-        window.location.href = "index.html?token=" + token;
-    }, 2000);
-}
-
-main();
+createKey();
 </script>
+
 </body>
 </html>
