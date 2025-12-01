@@ -2,65 +2,67 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>Feairl Key System</title>
+<title>老倍遊戲 Key 系統</title>
 <style>
 body {
-    background: #0a0a0a;
-    color: white;
-    font-family: "Segoe UI", sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    margin:0; background:#050505; color:white;
+    font-family:Arial;
 }
-.box {
-    background: rgba(255,255,255,0.05);
-    padding: 35px;
-    border-radius: 16px;
-    backdrop-filter: blur(8px);
-    width: 420px;
-    text-align: center;
+.glass {
+    margin:150px auto; width:480px; padding:40px;
+    background:rgba(255,255,255,0.05);
+    border-radius:20px; backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.1);
+    text-align:center;
 }
 </style>
 </head>
 <body>
 
-<div class="box" id="content">
-    <h2>Feairl Key System</h2>
-    <p>正在檢查 Linkvertise 驗證狀態…</p>
+<div id="box" class="glass">
+    <h2>🔍 正在驗證金鑰…</h2>
 </div>
 
 <script>
-const params = new URLSearchParams(window.location.search);
-const token = params.get("token");  // Linkvertise 會附帶 ?token=xxxx
-
-if (!token) {
-    document.getElementById("content").innerHTML = `
-        <h2>❌ 未完成驗證</h2>
-        <p>請先完成 Linkvertise 才能取得金鑰。</p>
-    `;
-} else {
-    // 向你的後端請求金鑰
-    fetch("YOUR_BACKEND_URL?token=" + token)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById("content").innerHTML = `
-                    <h2>🎉 驗證成功</h2>
-                    <p>你的金鑰：</p>
-                    <div style="font-size:20px;margin-top:10px;">
-                        <b>${data.key}</b>
-                    </div>
-                `;
-            } else {
-                document.getElementById("content").innerHTML = `
-                    <h2>❌ 驗證失敗</h2>
-                    <p>${data.message}</p>
-                `;
-            }
-        });
+async function check(token) {
+    let url = `https://YOUR_DB_ID-default-rtdb.firebaseio.com/tokens/${token}.json`;
+    let res = await fetch(url);
+    let data = await res.json();
+    if (!data) return false;
+    if (!data.valid) return false;
+    if (Date.now() > data.expire) return false;
+    return true;
 }
-</script>
 
+async function main() {
+    let p = new URLSearchParams(location.search);
+    let token = p.get("token");
+
+    if (!token) {
+        location.href = "https://work.ink/你的WorkInkID";
+        return;
+    }
+
+    let ok = await check(token);
+
+    if (!ok) {
+        location.href = "https://work.ink/你的WorkInkID";
+        return;
+    }
+
+    document.getElementById("box").innerHTML = `
+        <h2>✔ 驗證成功！</h2>
+        <p>以下是您的鑰匙：</p>
+        <h3 style="color:#00ff88">${token}</h3>
+
+        <button onclick="alert('程式下載中…')"
+        style="padding:15px 30px; margin-top:20px; background:#00ff88; border:none; border-radius:10px;">
+            下載程式
+        </button>
+    `;
+}
+
+main();
+</script>
 </body>
 </html>
