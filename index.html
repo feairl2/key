@@ -2,135 +2,64 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>今日專屬鑰匙</title>
-
+<title>Feairl Key System</title>
 <style>
-    body {
-        background: #0b0b0b;
-        margin: 0;
-        font-family: "Poppins", sans-serif;
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-
-    .box {
-        width: 540px;
-        background: rgba(30, 30, 30, 0.75);
-        padding: 40px;
-        border-radius: 22px;
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,0.1);
-        text-align: center;
-    }
-
-    .btn {
-        background: #4a67ff;
-        padding: 12px 20px;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        margin-top: 20px;
-        font-size: 18px;
-    }
-
-    .btn:hover {
-        background: #6c82ff;
-    }
-
-    .key-box {
-        font-size: 24px;
-        margin-top: 20px;
-        padding: 15px;
-        background: rgba(255,255,255,0.05);
-        border-radius: 12px;
-        word-wrap: break-word;
-    }
+body {
+    background: #0a0a0a;
+    color: white;
+    font-family: "Segoe UI", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.box {
+    background: rgba(255,255,255,0.05);
+    padding: 35px;
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    width: 420px;
+    text-align: center;
+}
 </style>
 </head>
 <body>
 
 <div class="box" id="content">
-    <h2>🔐 今日鑰匙系統</h2>
-    <button class="btn" onclick="startWorkink()">開始驗證（前往 Work.ink）</button>
+    <h2>Feairl Key System</h2>
+    <p>正在檢查 Linkvertise 驗證狀態…</p>
 </div>
 
 <script>
-// -------------------------------------------------------------
-// 產生 Token
-// -------------------------------------------------------------
-function generateToken() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let token = "";
-    for (let i = 0; i < 32; i++) token += chars.charAt(Math.floor(Math.random() * chars.length));
-    return token;
-}
-
-// -------------------------------------------------------------
-// 使用者按下按鈕 → 產生 token 並導向 Work.ink
-// -------------------------------------------------------------
-function startWorkink() {
-    const token = generateToken();
-
-    // 存到 localStorage（狀態：未使用）
-    localStorage.setItem("token_" + token, "unused");
-
-    // 前往 Work.ink（你自己的連結）
-    window.open("https://work.ink/26Yy/feairl-key-system", "_blank");
-
-    // 引導使用者回到本頁（帶 token）
-    window.location.href = "?token=" + token;
-}
-
-// -------------------------------------------------------------
-// 網頁載入後 → 檢查 token 是否存在且未使用
-// -------------------------------------------------------------
 const params = new URLSearchParams(window.location.search);
-const token = params.get("token");
+const token = params.get("token");  // Linkvertise 會附帶 ?token=xxxx
 
-if (token) {
-    const keyStatus = localStorage.getItem("token_" + token);
-
-    if (!keyStatus) {
-        document.getElementById("content").innerHTML = `
-            <h2>❌ Token 無效</h2>
-            <p>請重新點「開始驗證」。</p>
-        `;
-    }
-    else if (keyStatus === "used") {
-        document.getElementById("content").innerHTML = `
-            <h2>❌ Token 已使用過</h2>
-            <p>Token 只能用一次，請重新驗證。</p>
-        `;
-    }
-    else {
-        // -----------------------------------------------------
-        // Token 合法 → 生成金鑰（依 IP）
-        // -----------------------------------------------------
-        fetch("https://api.ipify.org?format=json")
-            .then(res => res.json())
-            .then(data => {
-                const ip = data.ip;
-                const today = new Date().toISOString().split("T")[0];
-                const raw = today + "-" + ip;
-                const key = "Feairl-" + btoa(raw).replace(/=/g,"");
-
-                // 標記 token 已使用
-                localStorage.setItem("token_" + token, "used");
-
+if (!token) {
+    document.getElementById("content").innerHTML = `
+        <h2>❌ 未完成驗證</h2>
+        <p>請先完成 Linkvertise 才能取得金鑰。</p>
+    `;
+} else {
+    // 向你的後端請求金鑰
+    fetch("YOUR_BACKEND_URL?token=" + token)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
                 document.getElementById("content").innerHTML = `
                     <h2>🎉 驗證成功</h2>
-                    <p>您的今日專屬鑰匙：</p>
-                    <div class="key-box">${key}</div>
-                    <p style="opacity:0.5">有效期限：24 小時</p>
+                    <p>你的金鑰：</p>
+                    <div style="font-size:20px;margin-top:10px;">
+                        <b>${data.key}</b>
+                    </div>
                 `;
-            });
-    }
+            } else {
+                document.getElementById("content").innerHTML = `
+                    <h2>❌ 驗證失敗</h2>
+                    <p>${data.message}</p>
+                `;
+            }
+        });
 }
-
 </script>
 
 </body>
