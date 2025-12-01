@@ -5,7 +5,7 @@
 <title>今日專屬鑰匙</title>
 <style>
     body {
-        background: #0d0d0d;
+        background: #0b0b0b;
         margin: 0;
         font-family: "Poppins", sans-serif;
         color: white;
@@ -16,56 +16,53 @@
     }
 
     .box {
-        width: 480px;
-        background: rgba(20, 20, 20, 0.75);
+        width: 520px;
+        background: rgba(30, 30, 30, 0.75);
         padding: 40px;
-        border-radius: 20px;
+        border-radius: 22px;
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255,255,255,0.1);
         text-align: center;
     }
 
     .key-box {
-        font-size: 26px;
+        font-size: 28px;
         margin-top: 20px;
         padding: 15px;
         background: rgba(255,255,255,0.05);
         border-radius: 12px;
     }
-
 </style>
 </head>
 <body>
 
 <div class="box" id="content">
-    <h2>🔑 取得今日專屬鑰匙</h2>
-    <p>請稍候，正在驗證 Work.ink 來源…</p>
+    <h2>🔍 檢查 Work.ink 驗證中…</h2>
 </div>
 
 <script>
-// ⛔ 如果使用者直接開網址，不從 Work.ink 來 → 必須阻擋
-const ref = document.referrer;
+// 取得網址參數
+const params = new URLSearchParams(window.location.search);
+const w = params.get("w");
 
-if (!ref.includes("work.ink")) {
+// 如果網址沒有 w → 代表沒完成 Work.ink
+if (!w) {
     document.getElementById("content").innerHTML = `
-        <h2>❌ 尚未完成 Work.ink</h2>
-        <p>請先透過 Work.ink 解鎖此頁面。</p>
-        <p style='opacity:0.5'>若已完成，請重新從 Work.ink 進入。</p>
+        <h2>❌ 未完成 Work.ink 驗證</h2>
+        <p>請先從 Work.ink 進入才能取得今日鑰匙。</p>
     `;
 } else {
 
-    // ✔ Work.ink 來源合法
-    // 產生今日專屬鑰匙（依照今日日期）
+    // ✔ Work.ink 驗證通過
     const today = new Date().toISOString().split("T")[0];
-    
-    // 你可以換成自己的金鑰產生方式
-    const key = "Feairl-" + btoa(today).replace(/=/g,"");
+    const todayKey = "Feairl-" + btoa(today).replace(/=/g,"");
 
     document.getElementById("content").innerHTML = `
-        <h2>🎉 成功解鎖！</h2>
+        <h2>🎉 驗證成功！</h2>
         <p>以下為您今日的專屬鑰匙：</p>
-        <div class="key-box">${key}</div>
-        <p style="opacity:0.7; margin-top:10px;">鑰匙 24 小時後會更新</p>
+
+        <div class="key-box">${todayKey}</div>
+        <p style="opacity:0.6; margin-top:10px;">鑰匙會於 24 小時後更新</p>
     `;
 }
 </script>
