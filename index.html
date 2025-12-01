@@ -75,7 +75,7 @@ const token = urlParams2.get("token");
 if (!token) {
     document.body.innerHTML = `
         <div style="color:white; text-align:center; margin-top:100px; font-size:24px;">
-            ❌ 請先完成 Work.ink 驗證
+            請先完成 Work.ink 驗證
         </div>
     `;
     throw new Error("沒有 Token");
@@ -100,7 +100,7 @@ db2.ref("tokens/" + token).once("value").then(snapshot => {
     if (!snapshot.exists()) {
         document.body.innerHTML = `
             <div style="color:white; text-align:center; margin-top:100px; font-size:24px;">
-                ❌ Token 已失效或不合法<br>
+                Token 已失效<br>
                 請重新完成 Work.ink
             </div>
         `;
@@ -203,6 +203,7 @@ db2.ref("tokens/" + token).once("value").then(snapshot => {
 </script>
 </body>
 </html>
+
 
 
 
