@@ -24,18 +24,21 @@ export default function handler(req, res){
         user.step++;
     }
 
+    // Step 1
     if (user.step === 1){
         return res.json({ step: 1, token });
     }
 
+    // Step 2
     if (user.step === 2){
         return res.json({ step: 2, token });
     }
 
+    // 完成 Step 2 → 直接產生 Key
     if (user.step >= 3){
         if (!user.key){
             user.key = genKey(token);
         }
-        return res.json({ step: 3, token, key: user.key });
+        return res.json({ step: "key", token, key: user.key });
     }
 }
