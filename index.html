@@ -58,12 +58,11 @@ async function loadPage(){
         `;
     }
 
-    if (data.step === 3){
-        document.getElementById("content").innerHTML = `
-            <h2>你的 Key</h2>
-            <p style="color:#40ff9c;font-size:24px;margin-top:10px;">${data.key}</p>
-        `;
-    }
+if (data.step === "key"){
+    document.getElementById("content").innerHTML = `
+        <h2>Your Key</h2>
+        <p style="color:#40ff9c;font-size:24px;">${data.key}</p>
+    `;
 }
 
 loadPage();
@@ -71,6 +70,7 @@ loadPage();
 
 </body>
 </html>
+
 
 
 
