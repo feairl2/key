@@ -1,61 +1,45 @@
 const crypto = require("crypto");
 
-let users = {};
-let keys = {};
+let sessions = {};   // 記錄 token + step + key
 
 function genToken() {
     return crypto.randomBytes(16).toString("hex");
 }
 
-function genKey(ip) {
-    return "LB-" + crypto.randomBytes(16).toString("hex").slice(0, 12) + "-" + ip.replace(/\./g, "");
+function genKey() {
+    return "LB-" + crypto.randomBytes(10).toString("hex");
 }
 
 export default function handler(req, res) {
-    const { token, done } = req.query;
+    let { token, done } = req.query;
 
-    // 取得使用者 IP
-    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress || "unknown";
-
-    // 初始化 token
-    let t = token;
-    if (!t || !users[t]) {
-        t = genToken();
-        users[t] = { step: 1 };
+    // 沒 token → 建立新的
+    if (!token || !sessions[token]) {
+        token = genToken();
+        sessions[token] = { step: 1, key: null };
     }
 
-    let user = users[t];
+    let user = sessions[token];
 
-    // 完成後跳下一步
+    // work.ink 回跳 → step+1
     if (done == 1) {
         user.step++;
     }
 
-    // Step 1
+    // Step1
     if (user.step === 1) {
-        return res.json({ step: 1, token: t });
+        return res.json({ step: 1, token });
     }
 
-    // Step 2
+    // Step2
     if (user.step === 2) {
-        return res.json({ step: 2, token: t });
+        return res.json({ step: 2, token });
     }
 
-    // Step >= 3 → 產生 Key
-    if (!keys[t]) {
-        const key = genKey(ip);
-
-        keys[t] = {
-            key,
-            ip,
-            created: Date.now(),
-            expires: Date.now() + 24 * 60 * 60 * 1000
-        };
+    // Step 完成 → 建 Key
+    if (!user.key) {
+        user.key = genKey();
     }
 
-    return res.json({
-        step: "key",
-        key: keys[t].key,
-        expires: keys[t].expires
-    });
+    return res.json({ step: "key", key: user.key });
 }
