@@ -2,14 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Feairl Key System</title>
+<title>老倍遊戲 Key System</title>
 
 <style>
     body {
         margin: 0;
         padding: 0;
         background: #0a0a0a;
-        color: #e0e0e0;
+        color: #ddd;
         font-family: "Segoe UI", Arial, sans-serif;
         text-align: center;
     }
@@ -53,16 +53,13 @@
         color: #40ff9c;
         box-shadow: 0 0 12px #40ff9c66;
     }
-
 </style>
 </head>
-
 <body>
 
-<h1>Feairl Key System</h1>
+<h1>老倍遊戲 Key System</h1>
 
 <div id="content">載入中...</div>
-
 
 <script>
 /* ---------------- Cookie 讀寫 ------------------- */
@@ -70,81 +67,87 @@ function setCookie(name, value, hours) {
     let expires = "";
     if (hours) {
         let date = new Date();
-        date.setTime(date.getTime() + (hours*60*60*1000)); 
+        date.setTime(date.getTime() + (hours*60*60*1000));
         expires = "; expires=" + date.toUTCString();
     }
-    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
 function getCookie(name) {
     let nameEQ = name + "=";
     let ca = document.cookie.split(';');
     for(let i=0;i < ca.length;i++) {
-        let c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        let c = ca[i].trim();
         if (c.indexOf(nameEQ) == 0) 
             return c.substring(nameEQ.length,c.length);
     }
     return null;
 }
 
+/* -------------- Step 記錄（用 Cookie） --------------- */
+function getStep(){
+    return Number(getCookie("laobei_step") || "1");
+}
+
+function setStep(n){
+    setCookie("laobei_step", n, 24); // 24 小時
+}
+
 /* ---------------- 主流程 ------------------- */
 async function loadPage(){
 
-    // 🟣（1）先檢查 Cookie，有 Key 就直接顯示，不跑 Step
     let savedKey = getCookie("laobei_key");
+
+    // 已經驗證過 → 顯示 Key
     if (savedKey){
         document.getElementById("content").innerHTML = `
             <div class="keybox">${savedKey}</div>
-            <p style="opacity:0.6;font-size:15px;">（已從 Cookie 載入，不需重新驗證）</p>
+            <p style="opacity:0.6;font-size:15px;">（已從 Cookie 載入）</p>
         `;
         return;
     }
 
-    // 🟣（2）沒有 Key → 正常 Step 流程
-    const url = new URL(window.location.href);
-    const token = url.searchParams.get("token");
-    const done = url.searchParams.get("done");
+    let step = getStep();
 
-    let res = await fetch(`/api/generate?token=${token || ""}&done=${done || ""}`);
-    let data = await res.json();
-
+    // 如果 referrer 是 outgoing.work.ink → 表示剛完成一步
+    if (document.referrer.includes("outgoing.work.ink")){
+        step++;
+        setStep(step);
+    }
 
     /* ---------- Step 1 ---------- */
-    if (data.step === 1){
+    if (step === 1){
         document.getElementById("content").innerHTML = `
             <h2>Step 1</h2>
             <button class="btn"
-                onclick="location.href='https://work.ink/26Yy/feairl-keysystem?redirect=https%3A%2F%2Fkey-1n3s.vercel.app%2F%3Ftoken%3D${data.token}%26done%3D1'">
+                onclick="location.href='https://work.ink/26Yy/feairl-keysystem'">
                 Continue
             </button>
         `;
         return;
     }
 
-
     /* ---------- Step 2 ---------- */
-    if (data.step === 2){
+    if (step === 2){
         document.getElementById("content").innerHTML = `
             <h2>Step 2</h2>
             <button class="btn"
-                onclick="location.href='https://work.ink/26Yy/feairl-keysystem-1?redirect=https%3A%2F%2Fkey-1n3s.vercel.app%2F%3Ftoken%3D${data.token}%26done%3D1'">
+                onclick="location.href='https://work.ink/26Yy/feairl-keysystem-1'">
                 Continue
             </button>
         `;
         return;
     }
 
-
-    /* ---------- Step 完成 → 顯示 KEY ---------- */
-    if (data.step === "key"){
-        // 存到 Cookie（有效期：24 小時）
-        setCookie("laobei_key", data.key, 24);
-
+    /* ---------- Step 3 → 產生 Random Key ---------- */
+    if (step >= 3){
+        let key = "LB-" + Math.random().toString(36).substring(2, 12).toUpperCase();
+        setCookie("laobei_key", key, 24);
+        
         document.getElementById("content").innerHTML = `
-            <h2>你的 KEY</h2>
-            <div class="keybox">${data.key}</div>
-            <p style="opacity:0.7;margin-top:10px;">（已自動保存，下次免驗證）</p>
+            <h2>你的鑰匙</h2>
+            <div class="keybox">${key}</div>
+            <p style="opacity:0.6;font-size:15px;">（已保存，下次免驗證）</p>
         `;
         return;
     }
@@ -155,7 +158,3 @@ loadPage();
 
 </body>
 </html>
-
-
-
-
