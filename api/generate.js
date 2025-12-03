@@ -1,44 +1,60 @@
 const crypto = require("crypto");
 
-let users = {}; 
+let keys = {}; // 存所有 Key（包含 IP & 過期時間）
+let users = {}; // 進度（Step）
 
-function genToken(){
+function genToken() {
     return crypto.randomBytes(16).toString("hex");
 }
 
-function genKey(token){
-    return "LB-" + crypto.createHash("sha256").update(token + "LAOBEI_SECRET").digest("hex").slice(0,32);
+function genKey(ip) {
+    return "LB-" + crypto.randomBytes(16).toString("hex").slice(0, 16) + "-" + ip.replace(/\./g, "");
 }
 
-export default function handler(req, res){
+export default function handler(req, res) {
     let { token, done } = req.query;
 
-    if (!token || !users[token]){
+    // 取得使用者 IP
+    let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress || "unknown";
+
+    // 初始化 Token & Step
+    if (!token || !users[token]) {
         token = genToken();
         users[token] = { step: 1 };
     }
 
     let user = users[token];
 
-    if (done == 1){
+    // 完成任務 → step++
+    if (done == 1) {
         user.step++;
     }
 
-    // Step 1
-    if (user.step === 1){
+    // Step1
+    if (user.step === 1) {
         return res.json({ step: 1, token });
     }
 
-    // Step 2
-    if (user.step === 2){
+    // Step2
+    if (user.step === 2) {
         return res.json({ step: 2, token });
     }
 
-    // 完成 Step 2 → 直接產生 Key
-    if (user.step >= 3){
-        if (!user.key){
-            user.key = genKey(token);
-        }
-        return res.json({ step: "key", token, key: user.key });
+    // 完成（step >= 3）
+    if (!keys[token]) {
+        let key = genKey(ip);
+
+        keys[token] = {
+            key,
+            ip,
+            created: Date.now(),
+            expires: Date.now() + 24 * 60 * 60 * 1000 // 24 小時
+        };
     }
+
+    return res.json({
+        step: "key",
+        key: keys[token].key,
+        expires: keys[token].expires
+    });
 }
