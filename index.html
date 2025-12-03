@@ -2,67 +2,152 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>老倍遊戲 Key System</title>
+<title>Feairl Key System</title>
+
 <style>
-body {
-    background: #0f0f0f;
-    font-family: Arial;
-    color: white;
-    text-align: center;
-    padding-top: 60px;
-}
-h1 {
-    color: #7b61ff;
-    font-size: 36px;
-}
-button {
-    padding: 14px 28px;
-    border: none;
-    border-radius: 8px;
-    font-size: 18px;
-    cursor: pointer;
-    background: #5b4bff;
-    color: white;
-    transition: 0.2s;
-}
-button:hover {
-    background: #7a6dff;
-}
+    body {
+        margin: 0;
+        padding: 0;
+        background: #0a0a0a;
+        color: #e0e0e0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        text-align: center;
+    }
+
+    h1 {
+        margin-top: 60px;
+        font-size: 40px;
+        color: #8b5dff;
+        text-shadow: 0 0 10px #8b5dff;
+    }
+
+    #content {
+        margin-top: 40px;
+        font-size: 20px;
+    }
+
+    .btn {
+        padding: 14px 32px;
+        background: linear-gradient(135deg, #6c47ff, #9b7cff);
+        border: none;
+        border-radius: 10px;
+        font-size: 20px;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.22s;
+        box-shadow: 0 0 12px #6c47ff88;
+    }
+
+    .btn:hover {
+        transform: scale(1.07);
+        box-shadow: 0 0 18px #9b7cffcc;
+    }
+
+    .keybox {
+        margin-top: 20px;
+        font-size: 28px;
+        padding: 12px 22px;
+        background: #111;
+        border-radius: 8px;
+        display: inline-block;
+        color: #40ff9c;
+        box-shadow: 0 0 12px #40ff9c66;
+    }
+
 </style>
 </head>
+
 <body>
 
 <h1>老倍遊戲 Key System</h1>
-<div id="content" style="margin-top:25px;"></div>
+
+<div id="content">載入中...</div>
+
 
 <script>
-const url = new URL(window.location.href);
-const token = url.searchParams.get("token");
-const done = url.searchParams.get("done");
+/* ---------------- Cookie 讀寫 ------------------- */
+function setCookie(name, value, hours) {
+    let expires = "";
+    if (hours) {
+        let date = new Date();
+        date.setTime(date.getTime() + (hours*60*60*1000)); 
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+}
 
+function getCookie(name) {
+    let nameEQ = name + "=";
+    let ca = document.cookie.split(';');
+    for(let i=0;i < ca.length;i++) {
+        let c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) 
+            return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+/* ---------------- 主流程 ------------------- */
 async function loadPage(){
+
+    // 🟣（1）先檢查 Cookie，有 Key 就直接顯示，不跑 Step
+    let savedKey = getCookie("laobei_key");
+    if (savedKey){
+        document.getElementById("content").innerHTML = `
+            <div class="keybox">${savedKey}</div>
+            <p style="opacity:0.6;font-size:15px;">（已從 Cookie 載入，不需重新驗證）</p>
+        `;
+        return;
+    }
+
+    // 🟣（2）沒有 Key → 正常 Step 流程
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("token");
+    const done = url.searchParams.get("done");
+
     let res = await fetch(`/api/generate?token=${token || ""}&done=${done || ""}`);
     let data = await res.json();
 
+
+    /* ---------- Step 1 ---------- */
     if (data.step === 1){
         document.getElementById("content").innerHTML = `
             <h2>Step 1</h2>
-            <button onclick="location.href='https://work.ink/26Yy/feairl-keysystem?redirect=https://https://key-1n3s.vercel.app//?token=${data.token}&done=1'">Continue</button>
+            <button class="btn"
+                onclick="location.href='https://work.ink/26Yy/feairl-keysystem?redirect=https://key-1n3s.vercel.app/?token=${data.token}&done=1'">
+                Continue
+            </button>
         `;
+        return;
     }
 
+
+    /* ---------- Step 2 ---------- */
     if (data.step === 2){
         document.getElementById("content").innerHTML = `
             <h2>Step 2</h2>
-            <button onclick="location.href='https://work.ink/26Yy/feairl-keysystem-1?redirect=https://https://key-1n3s.vercel.app//?token=${data.token}&done=1'">Continue</button>
+            <button class="btn"
+                onclick="location.href='https://work.ink/26Yy/feairl-keysystem-1?redirect=https://key-1n3s.vercel.app/?token=${data.token}&done=1'">
+                Continue
+            </button>
         `;
+        return;
     }
 
-if (data.step === "key"){
-    document.getElementById("content").innerHTML = `
-        <h2>Your Key</h2>
-        <p style="color:#40ff9c;font-size:24px;">${data.key}</p>
-    `;
+
+    /* ---------- Step 完成 → 顯示 KEY ---------- */
+    if (data.step === "key"){
+        // 存到 Cookie（有效期：24 小時）
+        setCookie("laobei_key", data.key, 24);
+
+        document.getElementById("content").innerHTML = `
+            <h2>你的 KEY</h2>
+            <div class="keybox">${data.key}</div>
+            <p style="opacity:0.7;margin-top:10px;">（已自動保存，下次免驗證）</p>
+        `;
+        return;
+    }
 }
 
 loadPage();
@@ -70,7 +155,3 @@ loadPage();
 
 </body>
 </html>
-
-
-
-
