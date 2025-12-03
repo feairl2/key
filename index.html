@@ -9,23 +9,20 @@
         margin: 0;
         padding: 0;
         background: #0a0a0a;
-        color: #ddd;
+        color: #e0e0e0;
         font-family: "Segoe UI", Arial, sans-serif;
         text-align: center;
     }
-
     h1 {
         margin-top: 60px;
         font-size: 40px;
         color: #8b5dff;
         text-shadow: 0 0 10px #8b5dff;
     }
-
     #content {
         margin-top: 40px;
         font-size: 20px;
     }
-
     .btn {
         padding: 14px 32px;
         background: linear-gradient(135deg, #6c47ff, #9b7cff);
@@ -37,12 +34,10 @@
         transition: 0.22s;
         box-shadow: 0 0 12px #6c47ff88;
     }
-
     .btn:hover {
         transform: scale(1.07);
         box-shadow: 0 0 18px #9b7cffcc;
     }
-
     .keybox {
         margin-top: 20px;
         font-size: 28px;
@@ -55,102 +50,94 @@
     }
 </style>
 </head>
+
 <body>
 
 <h1>老倍遊戲 Key System</h1>
-
 <div id="content">載入中...</div>
 
 <script>
-/* ---------------- Cookie 讀寫 ------------------- */
-function setCookie(name, value, hours) {
-    let expires = "";
-    if (hours) {
-        let date = new Date();
-        date.setTime(date.getTime() + (hours*60*60*1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/";
-}
+// --------------------------------
+// 永不會壞的 localStorage STEP 系統
+// --------------------------------
 
-function getCookie(name) {
-    let nameEQ = name + "=";
-    let ca = document.cookie.split(';');
-    for(let i=0;i < ca.length;i++) {
-        let c = ca[i].trim();
-        if (c.indexOf(nameEQ) == 0) 
-            return c.substring(nameEQ.length,c.length);
-    }
-    return null;
-}
-
-/* -------------- Step 記錄（用 Cookie） --------------- */
 function getStep(){
-    return Number(getCookie("laobei_step") || "1");
+    return Number(localStorage.getItem("laobei_step") || "1");
 }
 
 function setStep(n){
-    setCookie("laobei_step", n, 24); // 24 小時
+    localStorage.setItem("laobei_step", String(n));
 }
 
-/* ---------------- 主流程 ------------------- */
-async function loadPage(){
+function saveKey(key){
+    localStorage.setItem("laobei_key", key);
+}
 
-    let savedKey = getCookie("laobei_key");
+function getKey(){
+    return localStorage.getItem("laobei_key");
+}
 
-    // 已經驗證過 → 顯示 Key
-    if (savedKey){
+function loadPage(){
+
+    let key = getKey();
+    if (key){
         document.getElementById("content").innerHTML = `
-            <div class="keybox">${savedKey}</div>
-            <p style="opacity:0.6;font-size:15px;">（已從 Cookie 載入）</p>
+            <h2>你的 KEY</h2>
+            <div class="keybox">${key}</div>
+            <p style="opacity:0.6">（已保存，24 小時內不需重新取得）</p>
         `;
         return;
     }
 
     let step = getStep();
 
-    // 如果 referrer 是 outgoing.work.ink → 表示剛完成一步
-    if (document.referrer.includes("outgoing.work.ink")){
-        step++;
-        setStep(step);
-    }
-
-    /* ---------- Step 1 ---------- */
     if (step === 1){
         document.getElementById("content").innerHTML = `
             <h2>Step 1</h2>
             <button class="btn"
-                onclick="location.href='https://work.ink/26Yy/feairl-keysystem'">
+                onclick="goStep2()">
                 Continue
             </button>
         `;
         return;
     }
 
-    /* ---------- Step 2 ---------- */
     if (step === 2){
         document.getElementById("content").innerHTML = `
             <h2>Step 2</h2>
             <button class="btn"
-                onclick="location.href='https://work.ink/26Yy/feairl-keysystem-1'">
+                onclick="goStep3()">
                 Continue
             </button>
         `;
         return;
     }
 
-    /* ---------- Step 3 → 產生 Random Key ---------- */
     if (step >= 3){
-        let key = "LB-" + Math.random().toString(36).substring(2, 12).toUpperCase();
-        setCookie("laobei_key", key, 24);
-        
+        let newKey = "LB-" + Math.random().toString(36).substring(2,12).toUpperCase();
+        saveKey(newKey);
+
         document.getElementById("content").innerHTML = `
-            <h2>你的鑰匙</h2>
-            <div class="keybox">${key}</div>
-            <p style="opacity:0.6;font-size:15px;">（已保存，下次免驗證）</p>
+            <h2>你的 KEY</h2>
+            <div class="keybox">${newKey}</div>
+            <p style="opacity:0.6">（已保存，下次免驗證）</p>
         `;
         return;
     }
+}
+
+// --------------------------------
+// Step 按鈕處理（不靠 URL、不靠 referrer）
+// --------------------------------
+
+function goStep2(){
+    setStep(2);
+    location.href = "https://work.ink/26Yy/feairl-keysystem";
+}
+
+function goStep3(){
+    setStep(3);
+    location.href = "https://work.ink/26Yy/feairl-keysystem-1";
 }
 
 loadPage();
