@@ -1,60 +1,61 @@
 const crypto = require("crypto");
 
-let keys = {}; // 存所有 Key（包含 IP & 過期時間）
-let users = {}; // 進度（Step）
+let users = {};
+let keys = {};
 
 function genToken() {
     return crypto.randomBytes(16).toString("hex");
 }
 
 function genKey(ip) {
-    return "LB-" + crypto.randomBytes(16).toString("hex").slice(0, 16) + "-" + ip.replace(/\./g, "");
+    return "LB-" + crypto.randomBytes(16).toString("hex").slice(0, 12) + "-" + ip.replace(/\./g, "");
 }
 
 export default function handler(req, res) {
-    let { token, done } = req.query;
+    const { token, done } = req.query;
 
     // 取得使用者 IP
-    let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress || "unknown";
+    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress || "unknown";
 
-    // 初始化 Token & Step
-    if (!token || !users[token]) {
-        token = genToken();
-        users[token] = { step: 1 };
+    // 初始化 token
+    let t = token;
+    if (!t || !users[t]) {
+        t = genToken();
+        users[t] = { step: 1 };
     }
 
-    let user = users[token];
+    let user = users[t];
 
-    // 完成任務 → step++
+    // 完成後跳下一步
     if (done == 1) {
         user.step++;
     }
 
-    // Step1
+    // Step 1
     if (user.step === 1) {
-        return res.json({ step: 1, token });
+        return res.json({ step: 1, token: t });
     }
 
-    // Step2
+    // Step 2
     if (user.step === 2) {
-        return res.json({ step: 2, token });
+        return res.json({ step: 2, token: t });
     }
 
-    // 完成（step >= 3）
-    if (!keys[token]) {
-        let key = genKey(ip);
+    // Step >= 3 → 產生 Key
+    if (!keys[t]) {
+        const key = genKey(ip);
 
-        keys[token] = {
+        keys[t] = {
             key,
             ip,
             created: Date.now(),
-            expires: Date.now() + 24 * 60 * 60 * 1000 // 24 小時
+            expires: Date.now() + 24 * 60 * 60 * 1000
         };
     }
 
     return res.json({
         step: "key",
-        key: keys[token].key,
-        expires: keys[token].expires
+        key: keys[t].key,
+        expires: keys[t].expires
     });
 }
